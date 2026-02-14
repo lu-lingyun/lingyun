@@ -15,7 +15,7 @@ export default {
   },
 };
 
-async function 升级WS请求() {
+function 升级WS请求() {
   const 创建WS接口 = new WebSocketPair();
   const [客户端, WS接口] = Object.values(创建WS接口);
   WS接口.accept();
@@ -24,19 +24,19 @@ async function 升级WS请求() {
   return new Response(null, { status: 101, webSocket: 客户端 });
 }
 
-async function 启动传输管道(WS接口) {
+function 启动传输管道(WS接口) {
   let TCP接口,
-    首包数据 = false,
+    首包数据 = true,
     首包处理 = Promise.resolve(),
     传输数据;
 
-  WS接口.addEventListener("message", async (event) => {
-    首包处理 = 首包处理.then(async () => {
-      if (!首包数据) {
-        首包数据 = true;
-        await 解析VL标头(event.data);
+  WS接口.addEventListener("message", (event) => {
+    首包处理 = 首包处理.then(() => {
+      if (首包数据) {
+        首包数据 = false;
+        解析VL标头(event.data);
       } else {
-        await 传输数据.write(event.data);
+        传输数据.write(event.data);
       }
     });
   });
@@ -99,11 +99,12 @@ async function 启动传输管道(WS接口) {
     try {
       TCP接口 = connect({ hostname: 访问地址, port: 访问端口 });
       await TCP接口.opened;
+      建立传输管道(写入初始数据);
     } catch {
       const [反代IP地址, 反代IP端口 = 访问端口] = 反代IP.split(":");
       TCP接口 = connect({ hostname: 反代IP地址, port: 反代IP端口 });
+      建立传输管道(写入初始数据);
     }
-    建立传输管道(写入初始数据);
   }
 
   function 验证VL的密钥(arr, offset = 0) {
@@ -137,12 +138,12 @@ async function 启动传输管道(WS接口) {
     转换密钥格式.push((i + 256).toString(16).slice(1));
   }
 
-  async function 建立传输管道(写入初始数据) {
+  function 建立传输管道(写入初始数据) {
     传输数据 = TCP接口.writable.getWriter();
-    if (写入初始数据) await 传输数据.write(写入初始数据);
+    if (写入初始数据) 传输数据.write(写入初始数据);
     TCP接口.readable.pipeTo(
       new WritableStream({
-        async write(VL数据) {
+        write(VL数据) {
           WS接口.send(VL数据);
         },
       }),
