@@ -9,7 +9,7 @@ export default {
       if (url.searchParams.has("ip")) {
         反代IP = url.searchParams.get("ip");
       }
-      return await 升级WS请求();
+      return 升级WS请求();
     }
     return new Response(null);
   },
@@ -34,9 +34,9 @@ async function 启动传输管道(WS接口) {
     首包处理 = 首包处理.then(async () => {
       if (首包数据) {
         首包数据 = false;
-        await 解析VL标头(event.data);
+        解析VL标头(event.data);
       } else {
-        await 传输数据.write(event.data);
+        传输数据.write(event.data);
       }
     });
   });
@@ -95,7 +95,7 @@ async function 启动传输管道(WS接口) {
     const 写入初始数据 = VL数据.slice(地址信息索引 + 地址长度);
     try {
       TCP接口 = connect({ hostname: 访问地址, port: 访问端口 });
-      await TCP接口.opened;
+      TCP接口.opened;
     } catch {
       const [反代IP地址, 反代IP端口 = 访问端口] = 反代IP.split(":");
       TCP接口 = connect({ hostname: 反代IP地址, port: 反代IP端口 });
@@ -135,13 +135,11 @@ async function 启动传输管道(WS接口) {
 
   async function 建立传输管道(写入初始数据) {
     传输数据 = TCP接口.writable.getWriter();
-    if (写入初始数据) await 传输数据.write(写入初始数据);
-    await TCP接口.readable.pipeTo(
-      new WritableStream({
-        async write(chunk) {
-          WS接口.send(chunk);
-        },
-      }),
-    );
+    if (写入初始数据) 传输数据.write(写入初始数据);
+    TCP接口.readable.pipeTo(new WritableStream({
+      async write(chunk) {
+        WS接口.send(chunk);
+      }
+    }));
   }
 }
