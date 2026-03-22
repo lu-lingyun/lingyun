@@ -107,3 +107,9 @@ async function 启动传输管道(WS接口) {
 		);
 	}
 }
+
+function delay(ms) {
+	return new Promise((resolve, rej) => {
+		setTimeout(resolve, ms);
+	});
+}
